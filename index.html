@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>状态量管理（同步版·含计划页面）</title>
+<title>状态量管理（同步版）</title>
 
 <style>
   :root{--bg:#f1f5f9;--card:#ffffff;--accent:#2563eb;--danger:#dc2626;}
@@ -110,16 +110,11 @@
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div id="rankLabel" style="font-weight:700">段位：黑铁</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span class="small-muted">历史最高：<span id="highestPreview">0</span></span>
-        </div>
+        <div class="small-muted">历史最高：<span id="highestPreview">0</span></div>
       </div>
     </div>
 
     <div class="card" id="statsCard"></div>
-    <div style="text-align:center" class="small-muted">
-      提示：点击 + 或 - 进行操作，未制定计划时禁止加分（可在“计划”页中切换计划状态）。
-    </div>
   </div>
 
   <!-- PAGE 2（历史页） -->
@@ -151,12 +146,7 @@
   <div id="planPage" class="page">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <div style="font-weight:700;font-size:18px;">计划制定</div>
-          <div id="planStatus" class="plan-toggle" style="cursor:pointer;padding:6px 10px;border-radius:8px;border:1px dashed #cbd5e1">
-            未制定计划
-          </div>
-        </div>
+        <div style="font-weight:700;font-size:18px;">计划管理</div>
         <button id="backHome" class="btn small btn-ghost">返回</button>
       </div>
     </div>
@@ -169,7 +159,6 @@
     </div>
   </div>
 </div>
-
 <!-- 选择值 + 理由 弹窗 -->
 <div id="modal" class="modal" style="display:none">
   <div class="box">
@@ -188,7 +177,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-/* ================= Firebase 初始化 ================= */
+/* ============ Firebase ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyBdFS7wHsiQD1Bh_0sOvTvstt4gZvd3u6g",
   authDomain: "state-manager-561b7.firebaseapp.com",
@@ -197,23 +186,19 @@ const firebaseConfig = {
   storageBucket: "state-manager-561b7.appspot.com",
   messagingSenderId: "58381946444",
   appId: "1:58381946444:web:295079a9724fbd3093aee9",
-  measurementId: "G-FQ96DM0FMX"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const dbRef = ref(db, "state_manager_v1");
 
-/* ================= 全局数据 ================= */
+/* ============ 全局变量 ============ */
 const stats = ["主线","综合技能","身体素质","人际关系"];
 let values = {};
 let logs = [];
-let planMade = false;
 let highest = 0;
-/** plans: [{text:"xxx", category:"主线"}, ...] */
 let plans = [];
 
-/* 类别对应颜色 */
 const planColors = {
   "主线": "#1d4ed8",
   "综合技能": "#0f766e",
@@ -221,33 +206,28 @@ const planColors = {
   "人际关系": "#92400e"
 };
 
-/* ================= 监听 Firebase 数据变化 ================= */
-/* 关键点：如果服务器没有 plans 字段，就不要用 [] 把内存中的 plans 覆盖掉 */
-onValue(dbRef, snapshot => {
+/* ============ 监听数据库 ============ */
+onValue(dbRef, snapshot=>{
   const data = snapshot.val();
-  if (data) {
+  if(data){
     values = data.values || {};
     logs = data.logs || [];
-    planMade = !!data.planMade;
     highest = data.highest || 0;
-
-    if ("plans" in data) {
-      plans = data.plans || [];
-    }
-  } else {
-    stats.forEach(s => values[s] = 0);
-    logs = [];
-    planMade = false;
-    highest = 0;
-    plans = [];
+    plans = data.plans || [];
+  }else{
+    stats.forEach(s=>values[s]=0);
+    logs=[];
+    highest=0;
+    plans=[];
   }
+
   renderStats();
   renderHistory();
   updateTop();
   renderPlans();
 });
 
-/* ================= 渲染状态量 ================= */
+/* ============ 渲染状态量 ============ */
 function renderStats(){
   const card = document.getElementById("statsCard");
   card.innerHTML = "";
@@ -296,29 +276,28 @@ function renderStats(){
   updateTop();
 }
 
-/* ================= 段位规则 & 顶部更新 ================= */
+/* ============ 计算段位 ============ */
 function rankAndRealm(score){
-  let rank, realm;
-  if(score<20){rank="黑铁";realm="凡人";}
-  else if(score<60){rank="青铜Ⅲ";realm="凡人";}
-  else if(score<100){rank="青铜Ⅱ";realm="凡人";}
-  else if(score<150){rank="青铜Ⅰ";realm="凡人";}
-  else if(score<200){rank="白银Ⅲ";realm="化劲";}
-  else if(score<250){rank="白银Ⅱ";realm="化劲";}
-  else if(score<300){rank="白银Ⅰ";realm="化劲";}
-  else if(score<400){rank="黄金Ⅲ";realm="筑基";}
-  else if(score<500){rank="黄金Ⅱ";realm="筑基";}
-  else if(score<600){rank="黄金Ⅰ";realm="筑基";}
-  else if(score<750){rank="铂金Ⅲ";realm="炼虚";}
-  else if(score<900){rank="铂金Ⅱ";realm="炼虚";}
-  else if(score<1050){rank="铂金Ⅰ";realm="炼虚";}
-  else {rank="王者";realm="结丹";}
-  return {rank,realm};
+  if(score<20)return{rank:"黑铁",realm:"凡人"};
+  if(score<60)return{rank:"青铜Ⅲ",realm:"凡人"};
+  if(score<100)return{rank:"青铜Ⅱ",realm:"凡人"};
+  if(score<150)return{rank:"青铜Ⅰ",realm:"凡人"};
+  if(score<200)return{rank:"白银Ⅲ",realm:"化劲"};
+  if(score<250)return{rank:"白银Ⅱ",realm:"化劲"};
+  if(score<300)return{rank:"白银Ⅰ",realm:"化劲"};
+  if(score<400)return{rank:"黄金Ⅲ",realm:"筑基"};
+  if(score<500)return{rank:"黄金Ⅱ",realm:"筑基"};
+  if(score<600)return{rank:"黄金Ⅰ",realm:"筑基"};
+  if(score<750)return{rank:"铂金Ⅲ",realm:"炼虚"};
+  if(score<900)return{rank:"铂金Ⅱ",realm:"炼虚"};
+  if(score<1050)return{rank:"铂金Ⅰ",realm:"炼虚"};
+  return{rank:"王者",realm:"结丹"};
 }
 
 function updateTop(){
   const score = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
   const rr = rankAndRealm(score);
+
   document.getElementById("scoreLabel").textContent = score;
   document.getElementById("rankLabel").textContent = "段位：" + rr.rank;
   document.getElementById("rankAndRealm").textContent = rr.rank + " / " + rr.realm;
@@ -329,268 +308,207 @@ function updateTop(){
     const id = el.id.replace("val_","");
     el.textContent = values[id] ?? 0;
   });
-
-  const ps = document.getElementById("planStatus");
-  if(ps){
-    if(planMade){
-      ps.textContent = "计划已制定（点击切换）";
-      ps.style.color = "#111";
-      ps.style.borderColor = "#22c55e";
-    }else{
-      ps.textContent = "未制定计划（点击切换）";
-      ps.style.color = "var(--danger)";
-      ps.style.borderColor = "#fecaca";
-    }
-  }
 }
 
-/* ================= 弹窗加减 ================= */
+/* ============ 弹窗（加减）=========== */
 let modalOpenFor = null;
 let modalIsAdd = true;
 let chosenAmount = null;
 
 function openModal(stat,isAdd){
-  if(isAdd && !planMade){
-    alert("当前未制定计划，不能加分（减分允许）");
-    return;
-  }
   modalOpenFor = stat;
   modalIsAdd = isAdd;
-  document.getElementById("modalTitle").textContent = (isAdd?"增加":"减少") + " - " + stat;
+
+  document.getElementById("modalTitle").textContent =
+    (isAdd? "增加 - ":"减少 - ") + stat;
+
   const optionRow = document.getElementById("optionRow");
   optionRow.innerHTML = "";
+
   [1,3,5].forEach(n=>{
-    const b = document.createElement("button");
-    b.className = "btn small btn-ghost";
-    b.textContent = (isAdd?"+":"-") + n;
-    b.onclick = (ev)=>{
-      chosenAmount = n;
+    const b=document.createElement("button");
+    b.className="btn small btn-ghost";
+    b.textContent = (isAdd?"+":"-")+n;
+    b.onclick = ()=>{
+      chosenAmount=n;
       Array.from(optionRow.children).forEach(bb=>bb.style.border="1px solid #e2e8f0");
-      ev.target.style.border = "2px solid var(--accent)";
+      b.style.border="2px solid var(--accent)";
     };
     optionRow.appendChild(b);
   });
-  document.getElementById("reasonInput").value = "";
-  document.getElementById("modal").style.display = "flex";
+
+  document.getElementById("reasonInput").value="";
+  document.getElementById("modal").style.display="flex";
 }
 
 document.getElementById("cancelModal").onclick = ()=>{
-  document.getElementById("modal").style.display = "none";
-  chosenAmount = null;
+  document.getElementById("modal").style.display="none";
+  chosenAmount=null;
 };
 
 document.getElementById("confirmModal").onclick = ()=>{
-  const reason = document.getElementById("reasonInput").value.trim();
-  if(!chosenAmount || reason.length===0){
-    alert("请先选择数量并填写理由");
+  const reason=document.getElementById("reasonInput").value.trim();
+  if(!chosenAmount || !reason){
+    alert("请选择数量并填写理由");
     return;
   }
-  applyChange(modalOpenFor, modalIsAdd, chosenAmount, reason);
-  document.getElementById("modal").style.display = "none";
-  chosenAmount = null;
+  applyChange(modalOpenFor,modalIsAdd,chosenAmount,reason);
+  document.getElementById("modal").style.display="none";
+  chosenAmount=null;
 };
 
-/* ================= 写入 Firebase：状态量变更（只更 values/logs/highest） ================= */
+/* ============ 写入 Firebase（加减分）=========== */
 function applyChange(stat,isAdd,n,reason){
-  const delta = isAdd ? n : -n;
-  values[stat] = (Number(values[stat]) || 0) + delta;
-  const ts = (new Date()).toISOString().replace("T"," ").slice(0,19);
-  logs.push({time:ts,stat,delta,reason});
-  const score = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
-  if(score > highest) highest = score;
+  const delta=isAdd? n : -n;
+  values[stat]=(Number(values[stat])||0)+delta;
 
-  update(dbRef, { values, logs, highest });
+  const ts=new Date().toISOString().replace("T"," ").slice(0,19);
+  logs.push({time:ts,stat,delta,reason});
+
+  const score = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
+  if(score>highest) highest=score;
+
+  update(dbRef,{ values, logs, highest });
 }
 
-/* ================= 历史记录 ================= */
+/* ============ 历史记录 ============ */
 function renderHistory(){
-  const box = document.getElementById("historyBox");
-  box.innerHTML = "";
+  const box=document.getElementById("historyBox");
+  box.innerHTML="";
   logs.slice().reverse().forEach(item=>{
-    const d = document.createElement("div");
-    d.style.padding = "6px 4px";
-    d.style.borderBottom = "1px dashed #eef2ff";
-    d.innerHTML = `
-      <div style="font-weight:600">
-        ${item.time}  ${item.stat} ${item.delta>0?('+'+item.delta):item.delta}
-      </div>
-      <div class="small-muted">理由：${escapeHtml(item.reason)}</div>
-    `;
+    const d=document.createElement("div");
+    d.style.padding="6px 4px";d.style.borderBottom="1px dashed #eef2ff";
+    d.innerHTML=`
+      <div style="font-weight:600">${item.time}  ${item.stat} ${item.delta>0?('+'
+        +item.delta):item.delta}</div>
+      <div class="small-muted">理由：${item.reason}</div>`;
     box.appendChild(d);
   });
 }
 
-function escapeHtml(s){
-  return String(s).replace(/&/g,'&amp;')
-                  .replace(/</g,'&lt;')
-                  .replace(/>/g,'&gt;');
-}
-
-/* ================= 导出 JSON ================= */
-document.getElementById("exportBtn").onclick = ()=>{
-  const blob = new Blob([JSON.stringify({values,logs,highest,plans,planMade},null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "state_data.json";
-  a.click();
+/* ============ 导出 JSON ============ */
+document.getElementById("exportBtn").onclick=()=>{
+  const blob=new Blob([JSON.stringify({values,logs,highest,plans},null,2)],
+    {type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="state_data.json";a.click();
   URL.revokeObjectURL(url);
 };
 
-/* ================= 页面切换 ================= */
-function showPage(pageId){
-  ["page1","page2","planPage"].forEach(id=>{
-    document.getElementById(id).classList.remove("active");
+/* ============ 页面切换 ============ */
+function showPage(id){
+  ["page1","page2","planPage"].forEach(p=>{
+    document.getElementById(p).classList.remove("active");
   });
-  document.getElementById(pageId).classList.add("active");
+  document.getElementById(id).classList.add("active");
 }
 
-document.getElementById("toPage1").onclick = ()=>{
-  showPage("page1");
-  document.getElementById("toPage1").classList.add("btn-ghost");
-  document.getElementById("toPage2").classList.remove("btn-ghost");
-  document.getElementById("toPlanPage").classList.remove("btn-ghost");
-};
-document.getElementById("toPage2").onclick = ()=>{
-  showPage("page2");
-  document.getElementById("toPage2").classList.add("btn-ghost");
-  document.getElementById("toPage1").classList.remove("btn-ghost");
-  document.getElementById("toPlanPage").classList.remove("btn-ghost");
-};
-document.getElementById("toPlanPage").onclick = ()=>{
-  showPage("planPage");
-  document.getElementById("toPlanPage").classList.add("btn-ghost");
-  document.getElementById("toPage1").classList.remove("btn-ghost");
-  document.getElementById("toPage2").classList.remove("btn-ghost");
-};
+document.getElementById("toPage1").onclick=()=>showPage("page1");
+document.getElementById("toPage2").onclick=()=>showPage("page2");
+document.getElementById("toPlanPage").onclick=()=>showPage("planPage");
+document.getElementById("backHome").onclick=()=>showPage("page1");
 
-document.getElementById("backHome").onclick = ()=>{
-  showPage("page1");
-  document.getElementById("toPage1").classList.add("btn-ghost");
-  document.getElementById("toPage2").classList.remove("btn-ghost");
-  document.getElementById("toPlanPage").classList.remove("btn-ghost");
-};
+/* ============ 计划页面（无需计划状态）=========== */
+const planContainer=document.getElementById("planContainer");
+const addPlanBtn=document.getElementById("addPlan");
+const savePlansBtn=document.getElementById("savePlans");
 
-/* ================= 计划状态切换（只更新 planMade，不动 plans） ================= */
-document.getElementById("planStatus").onclick = ()=>{
-  planMade = !planMade;
-  update(dbRef, { planMade });  // 只更新 planMade
-  updateTop();
-};
-
-/* ================= 计划页面逻辑 ================= */
-const planContainer = document.getElementById("planContainer");
-const addPlanBtn = document.getElementById("addPlan");
-const savePlansBtn = document.getElementById("savePlans");
-
-/* 渲染所有计划行 */
+/* 渲染计划 */
 function renderPlans(){
-  planContainer.innerHTML = "";
-  if(!plans || plans.length === 0){
-    // 初次至少一行空的
+  planContainer.innerHTML="";
+  if(plans.length===0){
     addPlanRow({text:"",category:""});
     return;
   }
-  plans.forEach(p=>{
-    addPlanRow(p);
-  });
+  plans.forEach(p=>addPlanRow(p));
 }
 
-/* 新增一行计划（从数据或空白） */
 function addPlanRow(planObj){
-  const row = document.createElement("div");
-  row.className = "plan-row";
+  const row=document.createElement("div");
+  row.className="plan-row";
 
-  const top = document.createElement("div");
-  top.className = "plan-row-top";
+  const top=document.createElement("div");
+  top.className="plan-row-top";
 
-  // 下拉框
-  const select = document.createElement("select");
-  select.className = "plan-select";
-  const opt0 = document.createElement("option");
-  opt0.value = "";
-  opt0.textContent = "选择类别";
-  select.appendChild(opt0);
-  ["主线","综合技能","身体素质","人际关系"].forEach(c=>{
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    select.appendChild(opt);
+  const sel=document.createElement("select");
+  sel.className="plan-select";
+
+  const opt0=document.createElement("option");
+  opt0.value="";opt0.textContent="选择类别";
+  sel.appendChild(opt0);
+
+  stats.forEach(s=>{
+    const opt=document.createElement("option");
+    opt.value=s;opt.textContent=s;
+    sel.appendChild(opt);
   });
-  select.value = planObj.category || "";
 
-  // 已完成按钮
-  const doneBtn = document.createElement("button");
-  doneBtn.className = "plan-done";
-  doneBtn.textContent = "已完成";
-  doneBtn.onclick = ()=>{
-    // 清空该行内容
-    select.value = "";
-    input.value = "";
-    updateRowStyle();
-    collectPlansAndSave(); // 同步一次，不会清空其他行
+  sel.value=planObj.category || "";
+
+  const done=document.createElement("button");
+  done.className="plan-done";
+  done.textContent="已完成";
+  done.onclick=()=>{
+    sel.value="";
+    input.value="";
+    updateRowColor();
+    collectPlansAndSave();
   };
 
-  top.appendChild(select);
-  top.appendChild(doneBtn);
+  top.appendChild(sel);
+  top.appendChild(done);
 
-  // 输入框
-  const input = document.createElement("input");
-  input.type = "text";
-  input.className = "plan-input";
-  input.placeholder = "请输入计划内容...";
-  input.value = planObj.text || "";
+  const input=document.createElement("input");
+  input.className="plan-input";
+  input.placeholder="请输入计划内容...";
+  input.value=planObj.text || "";
 
-  // 根据选择更新颜色
-  function updateRowStyle(){
-    const cat = select.value;
-    const color = planColors[cat] || "#111";
-    input.style.color = color;
+  function updateRowColor(){
+    const cat=sel.value;
+    input.style.color=planColors[cat] || "#111";
   }
-  select.onchange = updateRowStyle;
-  updateRowStyle();
+  sel.onchange=updateRowColor;
+  updateRowColor();
 
   row.appendChild(top);
   row.appendChild(input);
   planContainer.appendChild(row);
 }
 
-/* 点击添加计划：前一行必须不为空 */
-addPlanBtn.onclick = ()=>{
-  const rows = Array.from(planContainer.querySelectorAll(".plan-row"));
-  if(rows.length > 0){
-    const last = rows[rows.length-1];
-    const sel = last.querySelector(".plan-select");
-    const inp = last.querySelector(".plan-input");
-    if(!sel.value || !inp.value.trim()){
-      alert("上一行计划类别或内容为空，不能继续添加新行。");
+/* 添加计划：前一行必须有数据 */
+addPlanBtn.onclick=()=>{
+  const rows=Array.from(planContainer.querySelectorAll(".plan-row"));
+  if(rows.length>0){
+    const last=rows[rows.length-1];
+    const s=last.querySelector(".plan-select").value;
+    const t=last.querySelector(".plan-input").value.trim();
+    if(!s || !t){
+      alert("上一行未填写完整，不能新增行");
       return;
     }
   }
   addPlanRow({text:"",category:""});
 };
 
-/* 收集计划并保存到 Firebase（只更新 plans，不改其他字段） */
+/* 保存计划 */
 function collectPlansAndSave(){
-  const rows = Array.from(planContainer.querySelectorAll(".plan-row"));
-  const newPlans = [];
+  const rows=Array.from(planContainer.querySelectorAll(".plan-row"));
+  const newPlans=[];
   rows.forEach(r=>{
-    const sel = r.querySelector(".plan-select");
-    const inp = r.querySelector(".plan-input");
-    const cat = sel.value;
-    const txt = inp.value.trim();
-    if(cat && txt){
-      newPlans.push({category:cat,text:txt});
+    const c=r.querySelector(".plan-select").value;
+    const t=r.querySelector(".plan-input").value.trim();
+    if(c && t){
+      newPlans.push({category:c,text:t});
     }
   });
-  plans = newPlans;
-  update(dbRef, { plans });
+  plans=newPlans;
+  update(dbRef,{ plans });
 }
 
-/* 点击保存计划按钮 */
-savePlansBtn.onclick = ()=>{
+savePlansBtn.onclick=()=>{
   collectPlansAndSave();
-  alert("计划已保存并同步。");
+  alert("计划已保存并同步");
 };
 </script>
 </body>
