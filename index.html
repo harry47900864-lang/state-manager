@@ -39,7 +39,7 @@
   .page{display:none}
   .page.active{display:block}
 
-  .plan-row{display:flex;gap:6px;margin-bottom:8px}
+  .plan-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
   .plan-input{
     flex:1;padding:6px;border-radius:6px;border:1px solid #d0d7de;
     font-size:15px;
@@ -59,14 +59,8 @@
   .history-list{max-height:260px;overflow-y:auto;padding:6px}
   .small-muted{font-size:12px;color:#666}
 
-  /* 输入法修复：始终保持 IME 可输入 */
+  /* 输入法友好 */
   input, textarea { ime-mode: active; }
-
-  /* 颜色 */
-  .color-main{color:#2b6cb0}
-  .color-skill{color:#38a169}
-  .color-body{color:#e53e3e}
-  .color-social{color:#805ad5}
 
   /* 弹窗 */
   .modal{
@@ -180,21 +174,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ---------------- 节点选择 ---------------- */
-// v3 = 你旧的数据
-// v5 = 新系统
+// 旧节点（你的老数据） & 新节点
 const oldRef = ref(db, "state_manager_v3");
-const dbRef = ref(db,  "state_manager_v5");
+const dbRef  = ref(db, "state_manager_v5");
 
-/* ---------------- 状态数据 ---------------- */
 const stats = ["主线","综合技能","身体素质","人际关系"];
 
-let values = {};
-let logs   = [];
+let values  = {};
+let logs    = [];
 let highest = 0;
-let plans = [];
+let plans   = [];
 
-/* ---------------- 颜色 ---------------- */
+// 类型颜色
 const typeColor = {
   "主线":"#2b6cb0",
   "综合技能":"#38a169",
@@ -202,41 +193,36 @@ const typeColor = {
   "人际关系":"#805ad5"
 };
 
-/* ---------------- 首次迁移：v3 → v5 ---------------- */
+/* ---------- 一次性迁移 v3 → v5 ---------- */
 let migrated = localStorage.getItem("migrated_v3_to_v5");
-
 if (!migrated) {
-  onValue(oldRef, snap => {
+  onValue(oldRef, snap=>{
     const d = snap.val();
     if (d) {
-      console.log("正在迁移 v3 → v5 ...");
-
       values  = d.values  || {};
       logs    = d.logs    || [];
       highest = d.highest || 0;
       plans   = d.plans   || [];
-
       set(dbRef, { values, logs, highest, plans });
-
       localStorage.setItem("migrated_v3_to_v5", "yes");
-      alert("已成功迁移你的旧数据（state_manager_v3 → v5）！");
+      alert("已从 state_manager_v3 成功迁移历史数据到 v5。");
     }
   }, { onlyOnce:true });
 }
 
-/* ---------------- 实时监听 v5 ---------------- */
+/* ---------- v5 实时监听 ---------- */
 onValue(dbRef, snapshot=>{
   const data = snapshot.val();
   if (!data) {
     stats.forEach(s=>values[s]=0);
     logs = [];
-    plans = [];
     highest = 0;
+    plans = [];
   } else {
     values  = data.values  || {};
     logs    = data.logs    || [];
-    plans   = data.plans   || [];
     highest = data.highest || 0;
+    plans   = data.plans   || [];
   }
 
   renderStats();
@@ -245,12 +231,11 @@ onValue(dbRef, snapshot=>{
   updateTop();
 });
 
-/* ---------------- 保存到 v5 ---------------- */
 function saveAll(){
   set(dbRef, { values, logs, highest, plans });
 }
 
-/* ---------------- 页面切换 ---------------- */
+/* ---------- 页面切换 ---------- */
 document.getElementById("toPage1").onclick=()=>show("page1");
 document.getElementById("toPage2").onclick=()=>show("page2");
 document.getElementById("toPagePlan").onclick=()=>show("pagePlan");
@@ -260,10 +245,10 @@ function show(id){
   document.getElementById(id).classList.add("active");
 }
 
-/* ---------------- 段位规则 ---------------- */
+/* ---------- 段位规则 ---------- */
 function rankAndRealm(s){
-  if(s<20) return {rank:"黑铁",realm:"凡人"};
-  if(s<60) return {rank:"青铜Ⅲ",realm:"凡人"};
+  if(s<20)  return {rank:"黑铁",realm:"凡人"};
+  if(s<60)  return {rank:"青铜Ⅲ",realm:"凡人"};
   if(s<100) return {rank:"青铜Ⅱ",realm:"凡人"};
   if(s<150) return {rank:"青铜Ⅰ",realm:"凡人"};
   if(s<200) return {rank:"白银Ⅲ",realm:"化劲"};
@@ -274,20 +259,20 @@ function rankAndRealm(s){
   if(s<600) return {rank:"黄金Ⅰ",realm:"筑基"};
   if(s<750) return {rank:"铂金Ⅲ",realm:"炼虚"};
   if(s<900) return {rank:"铂金Ⅱ",realm:"炼虚"};
-  if(s<1050) return {rank:"铂金Ⅰ",realm:"炼虚"};
+  if(s<1050)return {rank:"铂金Ⅰ",realm:"炼虚"};
   return {rank:"王者",realm:"结丹"};
 }
 
-/* ---------------- 主页面 ---------------- */
+/* ---------- 状态量页面 ---------- */
 function renderStats(){
-  const card = document.getElementById("statsCard");
+  const card=document.getElementById("statsCard");
   card.innerHTML="";
 
   stats.forEach(s=>{
-    const row = document.createElement("div");
+    const row=document.createElement("div");
     row.className="row";
 
-    const left = document.createElement("div");
+    const left=document.createElement("div");
     left.style.display="flex";
     left.style.gap="8px";
     left.style.alignItems="center";
@@ -305,18 +290,18 @@ function renderStats(){
     left.appendChild(val);
 
     const right=document.createElement("div");
-    const addBtn=document.createElement("button");
-    addBtn.className="btn small";
-    addBtn.textContent="+";
-    addBtn.onclick=()=>openModal(s,true);
+    const add=document.createElement("button");
+    add.className="btn small";
+    add.textContent="+";
+    add.onclick=()=>openModal(s,true);
 
-    const subBtn=document.createElement("button");
-    subBtn.className="btn small btn-ghost";
-    subBtn.textContent="-";
-    subBtn.onclick=()=>openModal(s,false);
+    const sub=document.createElement("button");
+    sub.className="btn small btn-ghost";
+    sub.textContent="-";
+    sub.onclick=()=>openModal(s,false);
 
-    right.appendChild(addBtn);
-    right.appendChild(subBtn);
+    right.appendChild(add);
+    right.appendChild(sub);
 
     row.appendChild(left);
     row.appendChild(right);
@@ -326,25 +311,24 @@ function renderStats(){
   updateTop();
 }
 
-/* ---------------- 顶部 ---------------- */
+/* ---------- 顶部信息 ---------- */
 function updateTop(){
-  const score = Object.values(values).reduce((a,b)=>a+b,0);
-  const rr = rankAndRealm(score);
+  const score=Object.values(values).reduce((a,b)=>a+b,0);
+  const rr=rankAndRealm(score);
 
   document.getElementById("scoreLabel").textContent = score;
   document.getElementById("rankLabel").textContent  = "段位：" + rr.rank;
-  document.getElementById("rankAndRealm").textContent = rr.rank+" / "+rr.realm;
-
+  document.getElementById("rankAndRealm").textContent = rr.rank + " / " + rr.realm;
   document.getElementById("highestPreview").textContent = highest;
   document.getElementById("highLabel").textContent = highest;
 
   document.querySelectorAll(".stat-value").forEach(v=>{
-    const id = v.id.replace("val_","");
-    v.textContent = values[id];
+    const id=v.id.replace("val_","");
+    v.textContent=values[id];
   });
 }
 
-/* ---------------- 弹窗 ---------------- */
+/* ---------- 加减弹窗 ---------- */
 let modalOpenFor=null;
 let modalIsAdd=true;
 let chosenAmount=null;
@@ -352,8 +336,10 @@ let chosenAmount=null;
 function openModal(stat,isAdd){
   modalOpenFor=stat;
   modalIsAdd=isAdd;
+  chosenAmount=null;
 
-  document.getElementById("modalTitle").textContent = (isAdd? "增加 - ":"减少 - ") + stat;
+  document.getElementById("modalTitle").textContent =
+    (isAdd? "增加 - ":"减少 - ") + stat;
 
   const opt=document.getElementById("optionRow");
   opt.innerHTML="";
@@ -364,7 +350,7 @@ function openModal(stat,isAdd){
     b.textContent=(isAdd?"+":"-")+n;
     b.onclick=()=>{
       chosenAmount=n;
-      Array.from(opt.children).forEach(x=>x.style.border="1px solid #ddd");
+      Array.from(opt.children).forEach(x=>x.style.border="1px solid #d0d7de");
       b.style.border="2px solid var(--accent)";
     };
     opt.appendChild(b);
@@ -376,27 +362,24 @@ function openModal(stat,isAdd){
 
 document.getElementById("cancelModal").onclick=()=>{
   document.getElementById("modal").style.display="none";
-  chosenAmount=null;
 };
 
 document.getElementById("confirmModal").onclick=()=>{
   const reason=document.getElementById("reasonInput").value.trim();
   if(!chosenAmount || !reason){
-    alert("请选择数值并输入理由！");
+    alert("请选择数值并填写理由");
     return;
   }
   applyChange(modalOpenFor,modalIsAdd,chosenAmount,reason);
   document.getElementById("modal").style.display="none";
-  chosenAmount=null;
 };
 
-/* ---------------- 加减分 ---------------- */
-function applyChange(stat,isAdd,num,reason){
-  const delta=isAdd? num : -num;
+function applyChange(stat,isAdd,n,reason){
+  const delta=isAdd? n:-n;
   values[stat]+=delta;
 
   const ts=new Date().toISOString().replace("T"," ").slice(0,19);
-  logs.push({ time:ts, stat, delta, reason });
+  logs.push({time:ts,stat,delta,reason});
 
   const score=Object.values(values).reduce((a,b)=>a+b,0);
   if(score>highest) highest=score;
@@ -404,7 +387,7 @@ function applyChange(stat,isAdd,num,reason){
   saveAll();
 }
 
-/* ---------------- 历史记录 ---------------- */
+/* ---------- 历史记录 ---------- */
 function renderHistory(){
   const box=document.getElementById("historyBox");
   box.innerHTML="";
@@ -421,17 +404,20 @@ function renderHistory(){
   });
 }
 
-/* ---------------- 计划系统 ---------------- */
+/* ---------- 计划页面（颜色逻辑强化版） ---------- */
 function renderPlanList(){
   const cont=document.getElementById("planContainer");
   cont.innerHTML="";
 
-  plans.forEach((p,i)=>{
+  plans.forEach((p,idx)=>{
+    // 兼容旧数据：没有 type 时默认主线
+    if(!p.type) p.type="主线";
+    if(p.score == null) p.score = 1;
+
     const row=document.createElement("div");
     row.className="plan-row";
-    row.style.color = typeColor[p.type];
 
-    /* 下拉 */
+    /* 下拉选择 */
     const sel=document.createElement("select");
     sel.className="type-select";
     stats.forEach(t=>{
@@ -441,22 +427,28 @@ function renderPlanList(){
       if(t===p.type) op.selected=true;
       sel.appendChild(op);
     });
-    sel.onchange=()=>{
-      plans[i].type = sel.value;
-      row.style.color = typeColor[sel.value];
-      saveAll();
-    };
 
-    /* 文本输入 */
+    /* 文本输入（直接上色） */
     const inp=document.createElement("input");
     inp.className="plan-input";
-    inp.value=p.text;
-    inp.oninput=()=>{
-      plans[i].text=inp.value;
-      saveAll();
-    };
+    inp.value=p.text || "";
+    inp.style.color = typeColor[p.type] || "#111";
 
-    /* 分值 */
+    // 输入法友好
+    let composing=false;
+    inp.addEventListener("compositionstart",()=>composing=true);
+    inp.addEventListener("compositionend",()=>{
+      composing=false;
+      plans[idx].text = inp.value;
+      saveAll();
+    });
+    inp.addEventListener("input",()=>{
+      if(composing) return;
+      plans[idx].text = inp.value;
+      saveAll();
+    });
+
+    /* 分值输入 */
     const score=document.createElement("input");
     score.className="score-input";
     score.type="number";
@@ -467,16 +459,24 @@ function renderPlanList(){
       let v=Number(score.value);
       if(v>10) v=10;
       if(v<0) v=0;
-      plans[i].score=v;
+      plans[idx].score=v;
       score.value=v;
       saveAll();
     };
 
-    /* 完成按钮 */
+    /* 已完成按钮 */
     const btn=document.createElement("button");
     btn.className="finish-btn";
     btn.textContent="完成";
-    btn.onclick=()=>completePlan(i);
+    btn.onclick=()=>completePlan(idx);
+
+    /* 下拉变化时：同步更新颜色 + 类型 */
+    sel.onchange=()=>{
+      plans[idx].type = sel.value;
+      const c = typeColor[sel.value] || "#111";
+      inp.style.color = c;
+      saveAll();
+    };
 
     row.appendChild(sel);
     row.appendChild(inp);
@@ -487,48 +487,47 @@ function renderPlanList(){
   });
 }
 
-/* ---------------- 完成计划 ---------------- */
-function completePlan(i){
-  const p = plans[i];
-  if(!p.text.trim()) return;
+/* ---------- 完成计划：加分 + 记录 ---------- */
+function completePlan(idx){
+  const p=plans[idx];
+  if(!p.text || !p.text.trim()) return;
 
-  const stat=p.type;
-  const val=Number(p.score)||0;
+  const stat = p.type || "主线";
+  const add  = Number(p.score) || 0;
 
-  values[stat]+=val;
+  values[stat]+=add;
 
   const ts=new Date().toISOString().replace("T"," ").slice(0,19);
   logs.push({
     time:ts,
     stat,
-    delta:val,
-    reason:"完成计划："+p.text
+    delta:add,
+    reason:"完成计划：" + p.text
   });
 
-  plans.splice(i,1);
+  plans.splice(idx,1);
 
   const score=Object.values(values).reduce((a,b)=>a+b,0);
   if(score>highest) highest=score;
 
   saveAll();
-  renderPlanList();
-  renderStats();
-  renderHistory();
 }
 
-/* ---------------- 添加计划 ---------------- */
+/* ---------- 添加计划 ---------- */
 document.getElementById("addPlanBtn").onclick=()=>{
-  if(plans.length>0 && !plans[plans.length-1].text.trim()){
-    alert("上一行未填写，无法继续添加");
+  if(plans.length>0 && !plans[plans.length-1].text?.trim()){
+    alert("上一行计划为空，请先填写完。");
     return;
   }
-
-  plans.push({ text:"", type:"主线", score:1 });
+  plans.push({
+    text:"",
+    type:"主线",
+    score:1
+  });
   saveAll();
-  renderPlanList();
 };
 
-/* ---------------- 导出 JSON ---------------- */
+/* ---------- 导出 JSON ---------- */
 document.getElementById("exportBtn").onclick=()=>{
   const blob=new Blob(
     [JSON.stringify({values,logs,highest,plans},null,2)],
@@ -536,10 +535,11 @@ document.getElementById("exportBtn").onclick=()=>{
   );
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="state_data.json"; a.click();
+  a.href=url;
+  a.download="state_data.json";
+  a.click();
   URL.revokeObjectURL(url);
 };
-
 </script>
 </body>
 </html>
