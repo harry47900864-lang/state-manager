@@ -186,7 +186,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 /* ================= Firebase 初始化 ================= */
 const firebaseConfig = {
@@ -395,7 +395,8 @@ function applyChange(stat,isAdd,n,reason){
   const score = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
   if(score > highest) highest = score;
 
-  set(dbRef, { values, logs, planMade, highest, plans });
+  // 只更新相关字段，不覆盖 plans / planMade
+  update(dbRef, { values, logs, highest });
 }
 
 /* ================= 历史记录 ================= */
@@ -424,7 +425,7 @@ function escapeHtml(s){
 
 /* ================= 导出 JSON ================= */
 document.getElementById("exportBtn").onclick = ()=>{
-  const blob = new Blob([JSON.stringify({values,logs,highest,plans},null,2)], {type:"application/json"});
+  const blob = new Blob([JSON.stringify({values,logs,highest,plans,planMade},null,2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -467,10 +468,10 @@ document.getElementById("backHome").onclick = ()=>{
   document.getElementById("toPlanPage").classList.remove("btn-ghost");
 };
 
-/* ================= 计划状态切换 ================= */
+/* ================= 计划状态切换（只更新 planMade，不动 plans） ================= */
 document.getElementById("planStatus").onclick = ()=>{
   planMade = !planMade;
-  set(dbRef, { values, logs, planMade, highest, plans });
+  update(dbRef, { planMade });  // 只更新状态，不覆盖其他字段
   updateTop();
 };
 
@@ -524,7 +525,7 @@ function addPlanRow(planObj){
     select.value = "";
     input.value = "";
     updateRowStyle();
-    collectPlansAndSave(); // 同步一次
+    collectPlansAndSave(); // 同步一次，不会清空其他行
   };
 
   top.appendChild(select);
@@ -566,7 +567,7 @@ addPlanBtn.onclick = ()=>{
   addPlanRow({text:"",category:""});
 };
 
-/* 收集计划并保存到 Firebase（点击“保存计划”或某些操作时手动调用） */
+/* 收集计划并保存到 Firebase（不会动 values/logs/planMade/highest） */
 function collectPlansAndSave(){
   const rows = Array.from(planContainer.querySelectorAll(".plan-row"));
   const newPlans = [];
@@ -580,7 +581,8 @@ function collectPlansAndSave(){
     }
   });
   plans = newPlans;
-  set(dbRef, { values, logs, planMade, highest, plans });
+  // 只更新 plans 字段
+  update(dbRef, { plans });
 }
 
 /* 点击保存计划按钮 */
