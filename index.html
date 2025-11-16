@@ -6,65 +6,98 @@
 <title>布鲁斯训练营</title>
 
 <style>
-  :root{--bg:#0f1720;--card:#ffffff;--accent:#2b6cb0;--danger:#e53e3e}
-  body{font-family:"Helvetica Neue",Arial;margin:0;background:linear-gradient(180deg,#f7fafc,#edf2f7);color:#111}
-
-  .app{max-width:720px;margin:18px auto;padding:12px}
-  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  :root{
+    --accent:#2b6cb0;
+    --danger:#e53e3e;
+  }
+  body{
+    font-family:"Helvetica Neue",Arial;
+    margin:0;
+    background:#f0f2f5;
+  }
+  .app{max-width:720px;margin:15px auto;padding:12px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .title{font-size:20px;font-weight:700}
-
-  .card{background:#fff;border-radius:10px;padding:12px;
-        box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px}
-
-  .row{display:flex;align-items:center;justify-content:space-between;
-       padding:8px 0;border-bottom:1px solid #f1f5f9}
+  .btn{
+    padding:6px 10px;border-radius:6px;border:0;
+    background:var(--accent);color:#fff;font-weight:600
+  }
+  .btn.small{padding:5px 8px;font-size:14px}
+  .btn.ghost{background:#fff;color:#333;border:1px solid #d0d7de}
+  .card{
+    background:#fff;border-radius:10px;padding:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:12px
+  }
+  .row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 0;border-bottom:1px solid #eee
+  }
   .row:last-child{border-bottom:0}
-
-  .btn{padding:6px 10px;border-radius:6px;border:0;background:var(--accent);color:#fff;font-weight:600}
-  .btn.small{padding:6px 9px;font-size:14px}
-  .btn.ghost{background:#f7fafc;color:#111;border:1px solid #e2e8f0}
-
   .stat-label{font-size:16px;font-weight:600}
   .stat-value{font-size:16px;min-width:60px;text-align:center}
 
   .page{display:none}
   .page.active{display:block}
 
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);
-         display:flex;align-items:center;justify-content:center}
-  .modal .box{width:90%;max-width:420px;background:#fff;padding:14px;border-radius:10px}
+  .plan-row{display:flex;gap:6px;margin-bottom:8px}
+  .plan-input{
+    flex:1;padding:6px;border-radius:6px;border:1px solid #d0d7de;
+    font-size:15px;
+  }
+  .score-input{
+    width:60px;padding:6px;border-radius:6px;
+    border:1px solid #d0d7de;text-align:center
+  }
+  .finish-btn{
+    background:#2ecc71;color:#fff;border:0;
+    padding:6px 10px;border-radius:6px;font-weight:600
+  }
+  .type-select{
+    padding:6px;border-radius:6px;border:1px solid #d0d7de
+  }
 
-  .option-row{display:flex;gap:8px;margin:8px 0}
-  .history-list{max-height:260px;overflow:auto;padding:6px;background:#fbfdff;
-                border-radius:6px;border:1px solid #e6eef8}
-  .small-muted{font-size:13px;color:#64748b}
-  .export-btn{background:#2d3748;color:#fff;border-radius:8px;padding:8px 10px;border:0}
+  .history-list{max-height:260px;overflow-y:auto;padding:6px}
+  .small-muted{font-size:12px;color:#666}
 
-  .plan-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
-  .plan-input{flex:1;padding:6px;border-radius:6px;border:1px solid #dce3ea;font-size:15px}
-  .score-input{width:60px;padding:6px;border-radius:6px;border:1px solid #dce3ea;text-align:center}
-  .finish-btn{background:#38a169;color:#fff;border:0;border-radius:6px;padding:6px 10px}
-  .type-select{padding:6px;border-radius:6px;border:1px solid #dce3ea}
+  /* 输入法修复：始终保持 IME 可输入 */
+  input, textarea { ime-mode: active; }
+
+  /* 颜色 */
+  .color-main{color:#2b6cb0}
+  .color-skill{color:#38a169}
+  .color-body{color:#e53e3e}
+  .color-social{color:#805ad5}
+
+  /* 弹窗 */
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,0.4);
+    display:none;justify-content:center;align-items:center;
+  }
+  .modal .box{
+    background:#fff;padding:15px;border-radius:10px;
+    width:90%;max-width:400px;
+  }
+  .option-row{display:flex;gap:8px;margin:10px 0}
 </style>
 </head>
 
 <body>
 <div class="app">
 
-  <!-- 顶部导航 -->
+  <!-- 顶部栏 -->
   <div class="top">
     <div class="title">布鲁斯训练营</div>
-    <div id="pageSwitchWrap">
-      <button id="toPage1" class="btn small">状态</button>
-      <button id="toPage2" class="btn small btn-ghost">历史</button>
+    <div>
+      <button id="toPage1" class="btn small">第一页</button>
+      <button id="toPage2" class="btn small btn-ghost">第二页</button>
       <button id="toPagePlan" class="btn small btn-ghost">计划</button>
     </div>
   </div>
 
-  <!-- PAGE 1（状态量） -->
+  <!-- PAGE 1 -->
   <div id="page1" class="page active">
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <div id="rankLabel" style="font-weight:700">段位：黑铁</div>
         <div class="small-muted">历史最高：<span id="highestPreview">0</span></div>
       </div>
@@ -73,85 +106,95 @@
     <div class="card" id="statsCard"></div>
   </div>
 
-  <!-- PAGE 2（历史记录） -->
+  <!-- PAGE 2 -->
   <div id="page2" class="page">
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:18px;font-weight:700">
-            胜点：<span id="scoreLabel">0</span>
+          <div style="font-size:18px;font-weight:700">胜点：<span id="scoreLabel">0</span></div>
+          <div class="small-muted">
+            段位/境界：<span id="rankAndRealm">黑铁 / 凡人</span>
           </div>
-          <div class="small-muted">段位/境界：<span id="rankAndRealm">黑铁 / 凡人</span></div>
         </div>
+
         <div style="text-align:right">
           <div class="small-muted">历史最高</div>
-          <div style="font-weight:700" id="highLabel">0</div>
+          <div id="highLabel" style="font-weight:700">0</div>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-weight:700">历史记录</div>
-        <button id="exportBtn" class="export-btn">导出 JSON</button>
+        <button id="exportBtn" class="btn small">导出 JSON</button>
       </div>
       <div id="historyBox" class="history-list"></div>
     </div>
   </div>
 
-  <!-- PAGE 3（计划页面） -->
+  <!-- PAGE 3：计划页 -->
   <div id="pagePlan" class="page">
     <div class="card">
       <div style="font-size:18px;font-weight:700;margin-bottom:10px">计划列表</div>
 
       <div id="planContainer"></div>
-
-      <button id="addPlanBtn" class="btn small" style="margin-top:10px">
-        添加计划
-      </button>
+      <button id="addPlanBtn" class="btn small" style="margin-top:10px">添加计划</button>
     </div>
   </div>
 
 </div>
 
-<!-- 加减弹窗 -->
-<div id="modal" class="modal" style="display:none">
+<!-- 弹窗 -->
+<div id="modal" class="modal">
   <div class="box">
-    <div style="font-weight:700" id="modalTitle">选择加减</div>
+    <div id="modalTitle" style="font-weight:700;margin-bottom:6px"></div>
+    <div id="optionRow" class="option-row"></div>
+    <input id="reasonInput"
+           placeholder="请输入理由"
+           style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc" />
 
-    <div class="option-row" id="optionRow"></div>
-
-    <input id="reasonInput" type="text"
-      placeholder="请输入理由（必填）"
-      style="width:100%;padding:8px;border-radius:6px;border:1px solid #e2e8f0"/>
-
-    <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px">
-      <button id="cancelModal" class="btn btn-ghost small">取消</button>
-      <button id="confirmModal" class="btn small">确认</button>
+    <div style="text-align:right;margin-top:10px">
+      <button id="cancelModal" class="btn small btn-ghost">取消</button>
+      <button id="confirmModal" class="btn small">确定</button>
     </div>
   </div>
 </div>
 
-<!-- JS 逻辑（含输入法修复） -->
 <script type="module">
+/* ---------------- Firebase init ---------------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBdFS7wHsiQD1Bh_0sOvTvstt4gZvd3u6g",
-  authDomain: "state-manager-561b7.firebaseapp.com",
-  databaseURL: "https://state-manager-561b7-default-rtdb.firebaseio.com",
-  projectId: "state-manager-561b7",
-  storageBucket: "state-manager-561b7.appspot.com",
-  messagingSenderId: "58381946444",
-  appId: "1:58381946444:web:295079a9724fbd3093aee9"
+  apiKey:"AIzaSyBdFS7wHsiQD1Bh_0sOvTvstt4gZvd3u6g",
+  authDomain:"state-manager-561b7.firebaseapp.com",
+  databaseURL:"https://state-manager-561b7-default-rtdb.firebaseio.com",
+  projectId:"state-manager-561b7",
+  storageBucket:"state-manager-561b7.appspot.com",
+  messagingSenderId:"58381946444",
+  appId:"1:58381946444:web:295079a9724fbd3093aee9",
+  measurementId:"G-FQ96DM0FMX"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const dbRef = ref(db, "state_manager_FINAL");
 
+/* ---------------- 节点选择 ---------------- */
+// v3 = 你旧的数据
+// v5 = 新系统
+const oldRef = ref(db, "state_manager_v3");
+const dbRef = ref(db,  "state_manager_v5");
+
+/* ---------------- 状态数据 ---------------- */
 const stats = ["主线","综合技能","身体素质","人际关系"];
+
+let values = {};
+let logs   = [];
+let highest = 0;
+let plans = [];
+
+/* ---------------- 颜色 ---------------- */
 const typeColor = {
   "主线":"#2b6cb0",
   "综合技能":"#38a169",
@@ -159,65 +202,83 @@ const typeColor = {
   "人际关系":"#805ad5"
 };
 
-let values = {};
-let logs = [];
-let highest = 0;
-let plans = [];
+/* ---------------- 首次迁移：v3 → v5 ---------------- */
+let migrated = localStorage.getItem("migrated_v3_to_v5");
 
+if (!migrated) {
+  onValue(oldRef, snap => {
+    const d = snap.val();
+    if (d) {
+      console.log("正在迁移 v3 → v5 ...");
+
+      values  = d.values  || {};
+      logs    = d.logs    || [];
+      highest = d.highest || 0;
+      plans   = d.plans   || [];
+
+      set(dbRef, { values, logs, highest, plans });
+
+      localStorage.setItem("migrated_v3_to_v5", "yes");
+      alert("已成功迁移你的旧数据（state_manager_v3 → v5）！");
+    }
+  }, { onlyOnce:true });
+}
+
+/* ---------------- 实时监听 v5 ---------------- */
 onValue(dbRef, snapshot=>{
   const data = snapshot.val();
-  if(data){
-    values = data.values || {};
-    logs = data.logs || [];
+  if (!data) {
+    stats.forEach(s=>values[s]=0);
+    logs = [];
+    plans = [];
+    highest = 0;
+  } else {
+    values  = data.values  || {};
+    logs    = data.logs    || [];
+    plans   = data.plans   || [];
     highest = data.highest || 0;
-    plans = data.plans || [];
-  }else{
-    stats.forEach(s => values[s]=0);
-    logs=[];
-    highest=0;
-    plans=[];
   }
+
   renderStats();
   renderHistory();
   renderPlanList();
   updateTop();
 });
 
+/* ---------------- 保存到 v5 ---------------- */
 function saveAll(){
-  set(dbRef, {values, logs, highest, plans});
+  set(dbRef, { values, logs, highest, plans });
 }
 
-/* ---------- 页面切换 ---------- */
-document.getElementById("toPage1").onclick=()=>switchPage("page1");
-document.getElementById("toPage2").onclick=()=>switchPage("page2");
-document.getElementById("toPagePlan").onclick=()=>switchPage("pagePlan");
+/* ---------------- 页面切换 ---------------- */
+document.getElementById("toPage1").onclick=()=>show("page1");
+document.getElementById("toPage2").onclick=()=>show("page2");
+document.getElementById("toPagePlan").onclick=()=>show("pagePlan");
 
-function switchPage(id){
+function show(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-/* ---------- 排位规则 ---------- */
-function rankAndRealm(score){
-  let rank,realm;
-  if(score<20){rank="黑铁";realm="凡人";}
-  else if(score<60){rank="青铜Ⅲ";realm="凡人";}
-  else if(score<100){rank="青铜Ⅱ";realm="凡人";}
-  else if(score<150){rank="青铜Ⅰ";realm="凡人";}
-  else if(score<200){rank="白银Ⅲ";realm="化劲";}
-  else if(score<250){rank="白银Ⅱ";realm="化劲";}
-  else if(score<300){rank="白银Ⅰ";realm="化劲";}
-  else if(score<400){rank="黄金Ⅲ";realm="筑基";}
-  else if(score<500){rank="黄金Ⅱ";realm="筑基";}
-  else if(score<600){rank="黄金Ⅰ";realm="筑基";}
-  else if(score<750){rank="铂金Ⅲ";realm="炼虚";}
-  else if(score<900){rank="铂金Ⅱ";realm="炼虚";}
-  else if(score<1050){rank="铂金Ⅰ";realm="炼虚";}
-  else{rank="王者";realm="结丹";}
-  return {rank,realm};
+/* ---------------- 段位规则 ---------------- */
+function rankAndRealm(s){
+  if(s<20) return {rank:"黑铁",realm:"凡人"};
+  if(s<60) return {rank:"青铜Ⅲ",realm:"凡人"};
+  if(s<100) return {rank:"青铜Ⅱ",realm:"凡人"};
+  if(s<150) return {rank:"青铜Ⅰ",realm:"凡人"};
+  if(s<200) return {rank:"白银Ⅲ",realm:"化劲"};
+  if(s<250) return {rank:"白银Ⅱ",realm:"化劲"};
+  if(s<300) return {rank:"白银Ⅰ",realm:"化劲"};
+  if(s<400) return {rank:"黄金Ⅲ",realm:"筑基"};
+  if(s<500) return {rank:"黄金Ⅱ",realm:"筑基"};
+  if(s<600) return {rank:"黄金Ⅰ",realm:"筑基"};
+  if(s<750) return {rank:"铂金Ⅲ",realm:"炼虚"};
+  if(s<900) return {rank:"铂金Ⅱ",realm:"炼虚"};
+  if(s<1050) return {rank:"铂金Ⅰ",realm:"炼虚"};
+  return {rank:"王者",realm:"结丹"};
 }
 
-/* ---------- 状态量渲染 ---------- */
+/* ---------------- 主页面 ---------------- */
 function renderStats(){
   const card = document.getElementById("statsCard");
   card.innerHTML="";
@@ -226,9 +287,10 @@ function renderStats(){
     const row = document.createElement("div");
     row.className="row";
 
-    const left=document.createElement("div");
+    const left = document.createElement("div");
     left.style.display="flex";
-    left.style.gap="10px";
+    left.style.gap="8px";
+    left.style.alignItems="center";
 
     const label=document.createElement("div");
     label.className="stat-label";
@@ -237,22 +299,24 @@ function renderStats(){
     const val=document.createElement("div");
     val.className="stat-value";
     val.id="val_"+s;
-    val.textContent=values[s];
+    val.textContent = values[s];
 
     left.appendChild(label);
     left.appendChild(val);
 
     const right=document.createElement("div");
-    const add=document.createElement("button");
-    add.className="btn small"; add.textContent="+";
-    add.onclick=()=>openModal(s,true);
+    const addBtn=document.createElement("button");
+    addBtn.className="btn small";
+    addBtn.textContent="+";
+    addBtn.onclick=()=>openModal(s,true);
 
-    const sub=document.createElement("button");
-    sub.className="btn small btn-ghost"; sub.textContent="-";
-    sub.onclick=()=>openModal(s,false);
+    const subBtn=document.createElement("button");
+    subBtn.className="btn small btn-ghost";
+    subBtn.textContent="-";
+    subBtn.onclick=()=>openModal(s,false);
 
-    right.appendChild(add);
-    right.appendChild(sub);
+    right.appendChild(addBtn);
+    right.appendChild(subBtn);
 
     row.appendChild(left);
     row.appendChild(right);
@@ -262,43 +326,48 @@ function renderStats(){
   updateTop();
 }
 
-/* ---------- 更新顶部 ---------- */
+/* ---------------- 顶部 ---------------- */
 function updateTop(){
   const score = Object.values(values).reduce((a,b)=>a+b,0);
   const rr = rankAndRealm(score);
 
-  document.getElementById("scoreLabel").textContent=score;
-  document.getElementById("rankLabel").textContent="段位："+rr.rank;
-  document.getElementById("rankAndRealm").textContent=rr.rank+" / "+rr.realm;
-  document.getElementById("highLabel").textContent=highest;
-  document.getElementById("highestPreview").textContent=highest;
+  document.getElementById("scoreLabel").textContent = score;
+  document.getElementById("rankLabel").textContent  = "段位：" + rr.rank;
+  document.getElementById("rankAndRealm").textContent = rr.rank+" / "+rr.realm;
+
+  document.getElementById("highestPreview").textContent = highest;
+  document.getElementById("highLabel").textContent = highest;
+
+  document.querySelectorAll(".stat-value").forEach(v=>{
+    const id = v.id.replace("val_","");
+    v.textContent = values[id];
+  });
 }
 
-/* ---------- 加减弹窗 ---------- */
-let modalStat=null, modalAdd=true, chosen=null;
+/* ---------------- 弹窗 ---------------- */
+let modalOpenFor=null;
+let modalIsAdd=true;
+let chosenAmount=null;
 
 function openModal(stat,isAdd){
-  modalStat=stat;
-  modalAdd=isAdd;
-  chosen=null;
+  modalOpenFor=stat;
+  modalIsAdd=isAdd;
 
-  document.getElementById("modalTitle").textContent=(isAdd?"增加 - ":"减少 - ")+stat;
+  document.getElementById("modalTitle").textContent = (isAdd? "增加 - ":"减少 - ") + stat;
 
-  const option=document.getElementById("optionRow");
-  option.innerHTML="";
+  const opt=document.getElementById("optionRow");
+  opt.innerHTML="";
 
   [1,3,5].forEach(n=>{
     const b=document.createElement("button");
     b.className="btn small btn-ghost";
     b.textContent=(isAdd?"+":"-")+n;
-
     b.onclick=()=>{
-      chosen=n;
-      [...option.children].forEach(bb=>bb.style.border="1px solid #e2e8f0");
+      chosenAmount=n;
+      Array.from(opt.children).forEach(x=>x.style.border="1px solid #ddd");
       b.style.border="2px solid var(--accent)";
     };
-
-    option.appendChild(b);
+    opt.appendChild(b);
   });
 
   document.getElementById("reasonInput").value="";
@@ -307,163 +376,159 @@ function openModal(stat,isAdd){
 
 document.getElementById("cancelModal").onclick=()=>{
   document.getElementById("modal").style.display="none";
+  chosenAmount=null;
 };
 
 document.getElementById("confirmModal").onclick=()=>{
   const reason=document.getElementById("reasonInput").value.trim();
-  if(!chosen || !reason){
-    alert("请选择数量并填写理由");
+  if(!chosenAmount || !reason){
+    alert("请选择数值并输入理由！");
     return;
   }
-  const delta = modalAdd ? chosen : -chosen;
-  values[modalStat]+=delta;
+  applyChange(modalOpenFor,modalIsAdd,chosenAmount,reason);
+  document.getElementById("modal").style.display="none";
+  chosenAmount=null;
+};
+
+/* ---------------- 加减分 ---------------- */
+function applyChange(stat,isAdd,num,reason){
+  const delta=isAdd? num : -num;
+  values[stat]+=delta;
 
   const ts=new Date().toISOString().replace("T"," ").slice(0,19);
-  logs.push({time:ts,stat:modalStat,delta,reason});
+  logs.push({ time:ts, stat, delta, reason });
 
   const score=Object.values(values).reduce((a,b)=>a+b,0);
   if(score>highest) highest=score;
 
   saveAll();
-  document.getElementById("modal").style.display="none";
-};
+}
 
-/* ---------- 历史记录 ---------- */
+/* ---------------- 历史记录 ---------------- */
 function renderHistory(){
   const box=document.getElementById("historyBox");
   box.innerHTML="";
 
   logs.slice().reverse().forEach(item=>{
     const d=document.createElement("div");
-    d.style.padding="6px 4px";
-    d.style.borderBottom="1px dashed #e4e7ef";
-    d.innerHTML = `
-      <div style="font-weight:600">
-        ${item.time}　${item.stat} ${item.delta>0?("+"+item.delta):item.delta}
-      </div>
+    d.style.padding="5px 4px";
+    d.style.borderBottom="1px dashed #ddd";
+    d.innerHTML=`
+      <div style="font-weight:600">${item.time}　${item.stat} ${item.delta>0? "+"+item.delta:item.delta}</div>
       <div class="small-muted">理由：${item.reason}</div>
     `;
     box.appendChild(d);
   });
 }
 
-/* ---------- 计划页面：输入法修复（关键） ---------- */
-function attachIMEFix(input){
-  let composing=false;
-
-  input.addEventListener("compositionstart",()=>composing=true);
-  input.addEventListener("compositionend",()=>{
-    composing=false;
-    input.dispatchEvent(new Event("input"));
-  });
-
-  input.addEventListener("input",()=>{
-    if(composing) return; // 解决中文输入卡断
-  });
-}
-
-/* ---------- 渲染计划 ---------- */
+/* ---------------- 计划系统 ---------------- */
 function renderPlanList(){
-  const box=document.getElementById("planContainer");
-  box.innerHTML="";
+  const cont=document.getElementById("planContainer");
+  cont.innerHTML="";
 
-  plans.forEach((p,idx)=>{
+  plans.forEach((p,i)=>{
     const row=document.createElement("div");
     row.className="plan-row";
-    row.style.color=typeColor[p.type];
+    row.style.color = typeColor[p.type];
 
+    /* 下拉 */
     const sel=document.createElement("select");
     sel.className="type-select";
     stats.forEach(t=>{
-      const opt=document.createElement("option");
-      opt.value=t; opt.textContent=t;
-      if(t===p.type) opt.selected=true;
-      sel.appendChild(opt);
+      const op=document.createElement("option");
+      op.value=t;
+      op.textContent=t;
+      if(t===p.type) op.selected=true;
+      sel.appendChild(op);
     });
     sel.onchange=()=>{
-      plans[idx].type=sel.value;
-      row.style.color=typeColor[sel.value];
+      plans[i].type = sel.value;
+      row.style.color = typeColor[sel.value];
       saveAll();
     };
 
+    /* 文本输入 */
     const inp=document.createElement("input");
     inp.className="plan-input";
     inp.value=p.text;
-
-    attachIMEFix(inp);
-
-    inp.addEventListener("input",()=>{
-      plans[idx].text=inp.value;
+    inp.oninput=()=>{
+      plans[i].text=inp.value;
       saveAll();
-    });
+    };
 
+    /* 分值 */
     const score=document.createElement("input");
     score.className="score-input";
     score.type="number";
+    score.min=0;
+    score.max=10;
     score.value=p.score;
-    score.min=0; score.max=10;
-
-    score.addEventListener("input",()=>{
+    score.oninput=()=>{
       let v=Number(score.value);
       if(v>10) v=10;
       if(v<0) v=0;
-      plans[idx].score=v;
+      plans[i].score=v;
       score.value=v;
       saveAll();
-    });
+    };
 
-    const done=document.createElement("button");
-    done.className="finish-btn";
-    done.textContent="完成";
-    done.onclick=()=>finishPlan(idx);
+    /* 完成按钮 */
+    const btn=document.createElement("button");
+    btn.className="finish-btn";
+    btn.textContent="完成";
+    btn.onclick=()=>completePlan(i);
 
     row.appendChild(sel);
     row.appendChild(inp);
     row.appendChild(score);
-    row.appendChild(done);
+    row.appendChild(btn);
 
-    box.appendChild(row);
+    cont.appendChild(row);
   });
 }
 
-/* ---------- 完成计划 ---------- */
-function finishPlan(idx){
-  const p=plans[idx];
+/* ---------------- 完成计划 ---------------- */
+function completePlan(i){
+  const p = plans[i];
   if(!p.text.trim()) return;
 
   const stat=p.type;
-  const add=Number(p.score)||0;
+  const val=Number(p.score)||0;
 
-  values[stat]+=add;
+  values[stat]+=val;
 
   const ts=new Date().toISOString().replace("T"," ").slice(0,19);
   logs.push({
     time:ts,
     stat,
-    delta:add,
-    reason:"完成计划：" + p.text
+    delta:val,
+    reason:"完成计划："+p.text
   });
 
-  plans.splice(idx,1);
+  plans.splice(i,1);
 
   const score=Object.values(values).reduce((a,b)=>a+b,0);
   if(score>highest) highest=score;
 
   saveAll();
+  renderPlanList();
+  renderStats();
+  renderHistory();
 }
 
-/* ---------- 添加计划 ---------- */
+/* ---------------- 添加计划 ---------------- */
 document.getElementById("addPlanBtn").onclick=()=>{
   if(plans.length>0 && !plans[plans.length-1].text.trim()){
-    alert("上一行计划为空，请先填写完。");
+    alert("上一行未填写，无法继续添加");
     return;
   }
 
-  plans.push({text:"",type:"主线",score:1});
+  plans.push({ text:"", type:"主线", score:1 });
   saveAll();
+  renderPlanList();
 };
 
-/* ---------- 导出 JSON ---------- */
+/* ---------------- 导出 JSON ---------------- */
 document.getElementById("exportBtn").onclick=()=>{
   const blob=new Blob(
     [JSON.stringify({values,logs,highest,plans},null,2)],
@@ -471,12 +536,10 @@ document.getElementById("exportBtn").onclick=()=>{
   );
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url;
-  a.download="state_history.json";
-  a.click();
+  a.href=url; a.download="state_data.json"; a.click();
   URL.revokeObjectURL(url);
 };
-</script>
 
+</script>
 </body>
 </html>
