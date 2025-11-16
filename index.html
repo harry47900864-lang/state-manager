@@ -222,6 +222,7 @@ const planColors = {
 };
 
 /* ================= 监听 Firebase 数据变化 ================= */
+/* 关键点：如果服务器没有 plans 字段，就不要用 [] 把内存中的 plans 覆盖掉 */
 onValue(dbRef, snapshot => {
   const data = snapshot.val();
   if (data) {
@@ -229,7 +230,10 @@ onValue(dbRef, snapshot => {
     logs = data.logs || [];
     planMade = !!data.planMade;
     highest = data.highest || 0;
-    plans = data.plans || [];
+
+    if ("plans" in data) {
+      plans = data.plans || [];
+    }
   } else {
     stats.forEach(s => values[s] = 0);
     logs = [];
@@ -386,7 +390,7 @@ document.getElementById("confirmModal").onclick = ()=>{
   chosenAmount = null;
 };
 
-/* ================= 写入 Firebase：状态量变更 ================= */
+/* ================= 写入 Firebase：状态量变更（只更 values/logs/highest） ================= */
 function applyChange(stat,isAdd,n,reason){
   const delta = isAdd ? n : -n;
   values[stat] = (Number(values[stat]) || 0) + delta;
@@ -395,7 +399,6 @@ function applyChange(stat,isAdd,n,reason){
   const score = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
   if(score > highest) highest = score;
 
-  // 只更新相关字段，不覆盖 plans / planMade
   update(dbRef, { values, logs, highest });
 }
 
@@ -471,7 +474,7 @@ document.getElementById("backHome").onclick = ()=>{
 /* ================= 计划状态切换（只更新 planMade，不动 plans） ================= */
 document.getElementById("planStatus").onclick = ()=>{
   planMade = !planMade;
-  update(dbRef, { planMade });  // 只更新状态，不覆盖其他字段
+  update(dbRef, { planMade });  // 只更新 planMade
   updateTop();
 };
 
@@ -567,7 +570,7 @@ addPlanBtn.onclick = ()=>{
   addPlanRow({text:"",category:""});
 };
 
-/* 收集计划并保存到 Firebase（不会动 values/logs/planMade/highest） */
+/* 收集计划并保存到 Firebase（只更新 plans，不改其他字段） */
 function collectPlansAndSave(){
   const rows = Array.from(planContainer.querySelectorAll(".plan-row"));
   const newPlans = [];
@@ -581,7 +584,6 @@ function collectPlansAndSave(){
     }
   });
   plans = newPlans;
-  // 只更新 plans 字段
   update(dbRef, { plans });
 }
 
