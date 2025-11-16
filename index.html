@@ -4,33 +4,95 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>布鲁斯训练营</title>
+
 <style>
-  :root{--bg:#0f1720;--card:#ffffff;--accent:#2b6cb0;--danger:#e53e3e}
-  body{font-family:"Helvetica Neue",Arial;margin:0;background:linear-gradient(180deg,#f7fafc,#edf2f7);color:#111}
+  :root{
+    --bg:#0f1720;
+    --card:#ffffff;
+    --accent:#2b6cb0;
+    --danger:#e53e3e;
+  }
+  body{
+    font-family:"Helvetica Neue",Arial;
+    margin:0;
+    background:linear-gradient(180deg,#f7fafc,#edf2f7);
+    color:#111;
+  }
   .app{max-width:720px;margin:18px auto;padding:12px}
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
   .title{font-size:20px;font-weight:700}
   .card{background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px}
   .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9}
   .row:last-child{border-bottom:0}
-  .btn{padding:6px 10px;border-radius:6px;border:0;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+  .btn{padding:6px 10px;border-radius:6px;border:0;background:var(--accent);color:#fff;font-weight:600}
   .btn.small{padding:6px 9px;font-size:14px}
   .btn.ghost{background:#f7fafc;color:#111;border:1px solid #e2e8f0}
   .stat-label{font-size:16px;font-weight:600}
   .stat-value{font-size:16px;min-width:60px;text-align:center}
+
+  /* 翻页按钮区域 */
   .page{display:none}
   .page.active{display:block}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center}
-  .modal .box{width:90%;max-width:420px;background:#fff;padding:14px;border-radius:10px}
+
+  /* 弹窗 */
+  .modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .modal .box{
+    width:90%;
+    max-width:420px;
+    background:#fff;
+    padding:14px;
+    border-radius:10px;
+  }
+
   .option-row{display:flex;gap:8px;margin:8px 0}
+
+  /* 计划页 */
+  .plan-row{
+    display:flex;
+    gap:6px;
+    margin-bottom:8px;
+    align-items:center;
+  }
+  .plan-input{
+    flex:1;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #dce3ea;
+    font-size:15px;
+  }
+  .type-select{
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #dce3ea;
+    font-size:15px;
+  }
+  .score-input{
+    width:60px;
+    padding:6px;
+    border-radius:6px;
+    border:1px solid #dce3ea;
+    text-align:center;
+    font-size:15px;
+  }
+  .finish-btn{
+    background:#38a169;
+    color:#fff;
+    border:0;
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:14px;
+  }
+
   .history-list{max-height:260px;overflow:auto;padding:6px;background:#fbfdff;border-radius:6px;border:1px solid #e6eef8}
   .small-muted{font-size:13px;color:#64748b}
-  .export-btn{background:#2d3748;color:#fff;border-radius:8px;padding:8px 10px;border:0;cursor:pointer}
-  .plan-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
-  .plan-input{flex:1;padding:6px;border-radius:6px;border:1px solid #dce3ea}
-  .score-input{width:60px;padding:6px;border-radius:6px;border:1px solid #dce3ea;text-align:center}
-  .finish-btn{background:#38a169;color:#fff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
-  .type-select{padding:6px;border-radius:6px;border:1px solid #dce3ea}
+  .export-btn{background:#2d3748;color:#fff;border-radius:8px;padding:8px 10px;border:0}
 </style>
 </head>
 
@@ -46,7 +108,7 @@
     </div>
   </div>
 
-  <!-- PAGE 1 -->
+  <!-- PAGE 1：状态主页 -->
   <div id="page1" class="page active">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -56,12 +118,13 @@
     </div>
 
     <div class="card" id="statsCard"></div>
+
     <div style="text-align:center" class="small-muted">
       提示：点击 + 或 - 进行操作。
     </div>
   </div>
 
-  <!-- PAGE 2 -->
+  <!-- PAGE 2：历史记录 -->
   <div id="page2" class="page">
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between">
@@ -69,8 +132,9 @@
           <div style="font-size:18px;font-weight:700">
             胜点：<span id="scoreLabel">0</span>
           </div>
-          <div class="small-muted">段位/境界：<span id="rankAndRealm">黑铁 / 凡人</span></div>
+          <div class="small-muted">段位 / 境界：<span id="rankAndRealm">黑铁 / 凡人</span></div>
         </div>
+
         <div style="text-align:right">
           <div class="small-muted">历史最高</div>
           <div style="font-weight:700" id="highLabel">0</div>
@@ -87,24 +151,23 @@
     </div>
   </div>
 
-  <!-- PAGE 3（计划页） -->
+  <!-- PAGE 3：计划列表 -->
   <div id="pagePlan" class="page">
     <div class="card">
       <div style="font-size:18px;font-weight:700;margin-bottom:8px">计划列表</div>
       <div id="planContainer"></div>
-      <button id="addPlanBtn" class="btn small" style="margin-top:10px">
-        添加计划
-      </button>
+      <button id="addPlanBtn" class="btn small" style="margin-top:10px">添加计划</button>
     </div>
   </div>
-</div>
 
+</div>
 <!-- 选择值 + 理由 弹窗 -->
 <div id="modal" class="modal" style="display:none">
   <div class="box">
     <div style="font-weight:700" id="modalTitle">选择加减</div>
     <div class="option-row" id="optionRow"></div>
-    <input id="reasonInput" type="text" placeholder="请输入这次加减的理由（必填）"
+    <input id="reasonInput" type="text"
+           placeholder="请输入这次加减的理由（必填）"
            style="width:100%;padding:8px;border-radius:6px;border:1px solid #e2e8f0" />
     <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px">
       <button id="cancelModal" class="btn btn-ghost small">取消</button>
@@ -132,35 +195,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ✅ 使用 v1 节点，恢复你原来的历史记录 */
-const dbRef = ref(db, "state_manager_v1");
+/* ✅ 使用 v3 节点（你选择的正式节点） */
+const dbRef = ref(db, "state_manager_v3");
 
-/* ---------------- 颜色方案（A） ---------------- */
+/* ---------------- 颜色方案（按任务类别） ---------------- */
 const typeColor = {
-  "主线": "#2b6cb0",
+  "主线":     "#2b6cb0",
   "综合技能": "#38a169",
   "身体素质": "#e53e3e",
   "人际关系": "#805ad5"
 };
 
-/* ---------------- 状态量 ---------------- */
+/* ---------------- 状态量与全局状态 ---------------- */
 const stats = ["主线","综合技能","身体素质","人际关系"];
-let values = {};
-let logs = [];
-let highest = 0;
-let plans = [];
+
+let values  = {};   // 四个状态量
+let logs    = [];   // 历史记录
+let highest = 0;    // 历史最高胜点
+let plans   = [];   // 计划列表
 
 /* ---------------- 数据规范化（兼容旧数据） ---------------- */
 function normalizeData() {
-  // 确保 values
+  // 确保 values 至少有四个键
   stats.forEach(s => {
     if (typeof values[s] !== "number") values[s] = 0;
   });
 
-  // 确保 logs 是数组
   if (!Array.isArray(logs)) logs = [];
 
-  // 确保 plans 是数组，并且每一项都有 text / type / score
   if (!Array.isArray(plans)) {
     plans = [];
   } else {
@@ -169,8 +231,8 @@ function normalizeData() {
         return { text: p, type: "主线", score: 1 };
       }
       return {
-        text: (p.text || ""),
-        type: typeColor[p.type] ? p.type : "主线",
+        text:  p.text  || "",
+        type:  typeColor[p.type] ? p.type : "主线",
         score: typeof p.score === "number" ? p.score : 1
       };
     });
@@ -181,15 +243,16 @@ function normalizeData() {
 onValue(dbRef, snapshot => {
   const data = snapshot.val();
   if (data) {
-    values = data.values || {};
-    logs = data.logs || [];
+    values  = data.values  || {};
+    logs    = data.logs    || [];
     highest = data.highest || 0;
-    plans = data.plans || [];
+    plans   = data.plans   || [];
   } else {
+    // 初始空数据
     stats.forEach(s => values[s] = 0);
-    logs = [];
-    plans = [];
+    logs    = [];
     highest = 0;
+    plans   = [];
   }
 
   normalizeData();
@@ -199,22 +262,22 @@ onValue(dbRef, snapshot => {
   updateTop();
 });
 
-/* ---------------- 保存功能 ---------------- */
+/* ---------------- 保存到 Firebase ---------------- */
 function saveAll() {
   set(dbRef, { values, logs, highest, plans });
 }
 
 /* ---------------- 页面切换 ---------------- */
-document.getElementById("toPage1").onclick = () => showPage("page1");
-document.getElementById("toPage2").onclick = () => showPage("page2");
-document.getElementById("toPagePlan").onclick = () => showPage("pagePlan");
+document.getElementById("toPage1").onclick   = () => showPage("page1");
+document.getElementById("toPage2").onclick   = () => showPage("page2");
+document.getElementById("toPagePlan").onclick= () => showPage("pagePlan");
 
 function showPage(id) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-/* ---------------- 段位规则 ---------------- */
+/* ---------------- 段位 / 境界规则 ---------------- */
 function rankAndRealm(score) {
   let rank, realm;
   if(score<20){rank="黑铁";realm="凡人";}
@@ -240,7 +303,7 @@ function renderStats() {
   card.innerHTML = "";
 
   stats.forEach(s => {
-    const row = document.createElement("div");
+    const row  = document.createElement("div");
     row.className = "row";
 
     const left = document.createElement("div");
@@ -288,11 +351,11 @@ function updateTop() {
   const score = Object.values(values).reduce((a, b) => a + b, 0);
   const rr = rankAndRealm(score);
 
-  document.getElementById("scoreLabel").textContent = score;
-  document.getElementById("rankLabel").textContent = "段位：" + rr.rank;
-  document.getElementById("rankAndRealm").textContent = rr.rank + " / " + rr.realm;
-  document.getElementById("highLabel").textContent = highest;
-  document.getElementById("highestPreview").textContent = highest;
+  document.getElementById("scoreLabel").textContent    = score;
+  document.getElementById("rankLabel").textContent     = "段位：" + rr.rank;
+  document.getElementById("rankAndRealm").textContent  = rr.rank + " / " + rr.realm;
+  document.getElementById("highLabel").textContent     = highest;
+  document.getElementById("highestPreview").textContent= highest;
 
   document.querySelectorAll(".stat-value").forEach(el => {
     const id = el.id.replace("val_", "");
@@ -300,16 +363,17 @@ function updateTop() {
   });
 }
 
-/* ---------------- 加减弹窗 ---------------- */
+/* ---------------- 加减弹窗逻辑 ---------------- */
 let modalOpenFor = null;
-let modalIsAdd = true;
+let modalIsAdd   = true;
 let chosenAmount = null;
 
 function openModal(stat, isAdd) {
   modalOpenFor = stat;
-  modalIsAdd = isAdd;
+  modalIsAdd   = isAdd;
 
-  document.getElementById("modalTitle").textContent = (isAdd ? "增加 - " : "减少 - ") + stat;
+  document.getElementById("modalTitle").textContent =
+      (isAdd ? "增加 - " : "减少 - ") + stat;
 
   const optionRow = document.getElementById("optionRow");
   optionRow.innerHTML = "";
@@ -318,13 +382,11 @@ function openModal(stat, isAdd) {
     const b = document.createElement("button");
     b.className = "btn small btn-ghost";
     b.textContent = (isAdd ? "+" : "-") + n;
-
     b.onclick = () => {
       chosenAmount = n;
       Array.from(optionRow.children).forEach(bb => bb.style.border = "1px solid #e2e8f0");
       b.style.border = "2px solid var(--accent)";
     };
-
     optionRow.appendChild(b);
   });
 
@@ -348,7 +410,7 @@ document.getElementById("confirmModal").onclick = () => {
   chosenAmount = null;
 };
 
-/* ---------------- 增减逻辑写入 Firebase ---------------- */
+/* ---------------- 状态量加减并写入历史 ---------------- */
 function applyChange(stat, isAdd, n, reason) {
   const delta = isAdd ? n : -n;
   values[stat] += delta;
@@ -373,15 +435,17 @@ function renderHistory() {
     d.style.borderBottom = "1px dashed #eef2ff";
 
     d.innerHTML = `
-      <div style="font-weight:600">${item.time}　${item.stat} ${item.delta > 0 ? "+" + item.delta : item.delta}</div>
-      <div class="small-muted">理由：${item.reason.replace(/</g,"&lt;")}</div>
+      <div style="font-weight:600">
+        ${item.time}　${item.stat} ${item.delta > 0 ? "+" + item.delta : item.delta}
+      </div>
+      <div class="small-muted">理由：${(item.reason || "").replace(/</g,"&lt;")}</div>
     `;
 
     box.appendChild(d);
   });
 }
 
-/* ---------------- 计划页面渲染 ---------------- */
+/* ---------------- 计划页渲染（含颜色 + 拼音输入支持） ---------------- */
 function renderPlanList() {
   const container = document.getElementById("planContainer");
   container.innerHTML = "";
@@ -390,9 +454,8 @@ function renderPlanList() {
     const row = document.createElement("div");
     row.className = "plan-row";
 
-    // 按类别设定颜色（如果没有就用主线）
     const currentType = p.type || "主线";
-    row.style.color = typeColor[currentType];
+    const color = typeColor[currentType] || "#111";
 
     /* 类别下拉 */
     const sel = document.createElement("select");
@@ -404,16 +467,19 @@ function renderPlanList() {
       if (t === currentType) op.selected = true;
       sel.appendChild(op);
     });
+    sel.style.color = color;
     sel.onchange = () => {
       plans[idx].type = sel.value;
-      row.style.color = typeColor[sel.value];
+      renderPlanList();   // 重新渲染，更新整行颜色
       saveAll();
     };
 
-    /* 输入框（拼音输入修复：composition 处理） */
+    /* 计划内容输入框（拼音输入：composition 修复） */
     const inp = document.createElement("input");
     inp.className = "plan-input";
-    inp.value = p.text;
+    inp.value = p.text || "";
+    inp.style.color = color;
+
     let isComposing = false;
     inp.addEventListener("compositionstart", () => { isComposing = true; });
     inp.addEventListener("compositionend", () => {
@@ -422,31 +488,33 @@ function renderPlanList() {
       saveAll();
     });
     inp.oninput = () => {
-      if (isComposing) return;   // 拼音还在组合，不保存、不重绘
+      if (isComposing) return;   // 拼音组合中，不保存、不触发重绘
       plans[idx].text = inp.value;
       saveAll();
     };
 
-    /* 分值 */
+    /* 分值输入框（0~10） */
     const scoreInp = document.createElement("input");
     scoreInp.className = "score-input";
     scoreInp.type = "number";
     scoreInp.value = p.score;
     scoreInp.min = 0;
     scoreInp.max = 10;
+    scoreInp.style.color = color;
     scoreInp.oninput = () => {
       let v = Number(scoreInp.value);
+      if (isNaN(v) || v < 0) v = 0;
       if (v > 10) v = 10;
-      if (v < 0 || isNaN(v)) v = 0;
       plans[idx].score = v;
       scoreInp.value = v;
       saveAll();
     };
 
-    /* 已完成 */
+    /* 完成按钮：加分 + 清除计划 */
     const doneBtn = document.createElement("button");
     doneBtn.className = "finish-btn";
     doneBtn.textContent = "完成";
+    doneBtn.style.background = color;
     doneBtn.onclick = () => completePlan(idx);
 
     row.appendChild(sel);
@@ -458,12 +526,12 @@ function renderPlanList() {
   });
 }
 
-/* ---------------- 点击完成计划：加分 + 清除 ---------------- */
+/* ---------------- 完成计划：加分 + 写入历史 + 删除该行计划 ---------------- */
 function completePlan(idx) {
   const p = plans[idx];
-  if (!p.text.trim()) return;
+  if (!p || !p.text || !p.text.trim()) return;
 
-  const stat = p.type || "主线";
+  const stat     = p.type || "主线";
   const addValue = Number(p.score) || 0;
 
   values[stat] += addValue;
@@ -487,34 +555,35 @@ function completePlan(idx) {
   renderHistory();
 }
 
-/* ---------------- 添加计划 ---------------- */
+/* ---------------- 添加计划（防止空行连加） ---------------- */
 document.getElementById("addPlanBtn").onclick = () => {
-  if (plans.length > 0 && plans[plans.length - 1].text.trim() === "") {
+  if (plans.length > 0 && !plans[plans.length - 1].text.trim()) {
     alert("上一行计划未填写内容，不能继续添加");
     return;
   }
-
   plans.push({
     text: "",
     type: "主线",
     score: 1
   });
-
   saveAll();
   renderPlanList();
 };
 
 /* ---------------- 导出 JSON ---------------- */
 document.getElementById("exportBtn").onclick = () => {
-  const blob = new Blob([JSON.stringify({ values, logs, highest, plans }, null, 2)],
-    { type: "application/json" });
+  const blob = new Blob(
+    [JSON.stringify({ values, logs, highest, plans }, null, 2)],
+    { type: "application/json" }
+  );
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "state_history.json";
+  const a   = document.createElement("a");
+  a.href    = url;
+  a.download= "state_history.json";
   a.click();
   URL.revokeObjectURL(url);
 };
 </script>
+
 </body>
 </html>
