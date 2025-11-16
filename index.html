@@ -72,7 +72,8 @@
     margin-bottom:10px;
   }
   .plan-row-top{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:10px;flex-wrap:wrap;
   }
   .plan-select{
     padding:4px 6px;border-radius:6px;border:1px solid #cbd5e1;
@@ -84,6 +85,10 @@
   .plan-done{
     padding:4px 8px;font-size:13px;border-radius:6px;border:0;
     background:#e11d48;color:#fff;cursor:pointer;
+  }
+  .plan-score{
+    padding:4px 6px;border-radius:6px;border:1px solid #cbd5e1;
+    width:70px;box-sizing:border-box;
   }
 
   @media (max-width:420px){
@@ -232,6 +237,7 @@ function renderStats(){
   const card = document.getElementById("statsCard");
   card.innerHTML = "";
   stats.forEach(s=>{
+    if(values[s] === undefined) values[s] = 0;
     const row = document.createElement("div");
     row.className = "row";
 
@@ -247,7 +253,7 @@ function renderStats(){
     const val = document.createElement("div");
     val.className = "stat-value";
     val.id = "val_" + s;
-    val.textContent = values[s] ?? 0;
+    val.textContent = values[s];
 
     left.appendChild(label);
     left.appendChild(val);
@@ -357,7 +363,7 @@ document.getElementById("confirmModal").onclick = ()=>{
   chosenAmount=null;
 };
 
-/* ============ 写入 Firebase（只改 values/logs/highest）=========== */
+/* ============ 写入 Firebase（加减按键）=========== */
 function applyChange(stat,isAdd,n,reason){
   const delta=isAdd? n : -n;
   values[stat]=(Number(values[stat])||0)+delta;
@@ -407,7 +413,7 @@ document.getElementById("toPage2").onclick=()=>showPage("page2");
 document.getElementById("toPlanPage").onclick=()=>showPage("planPage");
 document.getElementById("backHome").onclick=()=>showPage("page1");
 
-/* ============ 计划页面逻辑 ============ */
+/* ============ 计划页面逻辑（含分值加分）=========== */
 const planContainer=document.getElementById("planContainer");
 const addPlanBtn=document.getElementById("addPlan");
 const savePlansBtn=document.getElementById("savePlans");
@@ -415,7 +421,7 @@ const savePlansBtn=document.getElementById("savePlans");
 function renderPlans(){
   planContainer.innerHTML="";
   if(plans.length===0){
-    addPlanRow({text:"",category:""});
+    addPlanRow({text:"",category:"",score:""});
     return;
   }
   plans.forEach(p=>addPlanRow(p));
@@ -443,17 +449,71 @@ function addPlanRow(planObj){
 
   sel.value=planObj.category || "";
 
+  // 分值输入框（≤10，可小数）
+  const scoreInput = document.createElement("input");
+  scoreInput.type = "number";
+  scoreInput.className = "plan-score";
+  scoreInput.placeholder = "分值";
+  scoreInput.step = "0.1";
+  scoreInput.min = "0.1";
+  scoreInput.max = "10";
+  scoreInput.value = planObj.score ?? "";
+
   const done=document.createElement("button");
   done.className="plan-done";
   done.textContent="已完成";
   done.onclick=()=>{
-    sel.value="";
-    input.value="";
-    updateRowColor();
+    const category = sel.value;
+    const text = input.value.trim();
+    const rawScore = scoreInput.value.trim();
+    const score = Number(rawScore);
+
+    if(!category || !text){
+      alert("该计划未填写完整，无法完成");
+      return;
+    }
+    if(!rawScore || isNaN(score)){
+      alert("请输入分值（0.1~10 之间的数字）");
+      return;
+    }
+    if(score <= 0 || score > 10){
+      alert("分值必须在 0.1 到 10 之间");
+      return;
+    }
+
+    // 1. 对应状态量加分
+    values[category] = (Number(values[category]) || 0) + score;
+
+    // 2. 写入历史记录
+    const ts = new Date().toISOString().replace("T"," ").slice(0,19);
+    logs.push({
+      time: ts,
+      stat: category,
+      delta: score,
+      reason: "完成计划：" + text
+    });
+
+    // 3. 更新最高胜点
+    const totalScore = Object.values(values).reduce((a,b)=>a+(Number(b)||0),0);
+    if(totalScore > highest) highest = totalScore;
+
+    // 4. 从界面上移除当前计划行
+    row.remove();
+
+    // 5. 重新收集剩余计划，并保存
     collectPlansAndSave();
+
+    // 6. 更新数据库中数值和历史
+    update(dbRef,{ values, logs, highest });
+
+    // 7. 刷新 UI
+    renderStats();
+    renderHistory();
+    updateTop();
   };
 
   top.appendChild(sel);
+  top.appendChild(scoreInput);
   top.appendChild(done);
 
   const input=document.createElement("input");
@@ -473,19 +533,20 @@ function addPlanRow(planObj){
   planContainer.appendChild(row);
 }
 
-/* 添加计划：上一行必须填好 */
+/* 添加计划：上一行必须填好（类别、内容、分值） */
 addPlanBtn.onclick=()=>{
   const rows=Array.from(planContainer.querySelectorAll(".plan-row"));
   if(rows.length>0){
     const last=rows[rows.length-1];
     const c=last.querySelector(".plan-select").value;
     const t=last.querySelector(".plan-input").value.trim();
-    if(!c || !t){
-      alert("上一行类别或内容为空，不能再添加新计划");
+    const s=last.querySelector(".plan-score").value.trim();
+    if(!c || !t || !s){
+      alert("上一行类别 / 内容 / 分值未填写完整，不能再添加新计划");
       return;
     }
   }
-  addPlanRow({text:"",category:""});
+  addPlanRow({text:"",category:"",score:""});
 };
 
 /* 收集 + 保存计划（只更新 plans 字段） */
@@ -495,8 +556,14 @@ function collectPlansAndSave(){
   rows.forEach(r=>{
     const c=r.querySelector(".plan-select").value;
     const t=r.querySelector(".plan-input").value.trim();
+    const s=r.querySelector(".plan-score").value.trim();
+    const scoreNum = Number(s);
     if(c && t){
-      newPlans.push({category:c,text:t});
+      newPlans.push({
+        category:c,
+        text:t,
+        score: (!s || isNaN(scoreNum)) ? "" : scoreNum
+      });
     }
   });
   plans=newPlans;
