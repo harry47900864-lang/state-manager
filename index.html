@@ -13,12 +13,11 @@
   .card{background:#fff;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:12px}
   .row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9}
   .row:last-child{border-bottom:0}
-  .btn{padding:6px 10px;border-radius:6px;border:0;background:var(--accent);color:#fff;font-weight:600}
+  .btn{padding:6px 10px;border-radius:6px;border:0;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
   .btn.small{padding:6px 9px;font-size:14px}
   .btn.ghost{background:#f7fafc;color:#111;border:1px solid #e2e8f0}
   .stat-label{font-size:16px;font-weight:600}
   .stat-value{font-size:16px;min-width:60px;text-align:center}
-  .pager{display:flex;justify-content:center;margin-top:8px}
   .page{display:none}
   .page.active{display:block}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center}
@@ -26,11 +25,11 @@
   .option-row{display:flex;gap:8px;margin:8px 0}
   .history-list{max-height:260px;overflow:auto;padding:6px;background:#fbfdff;border-radius:6px;border:1px solid #e6eef8}
   .small-muted{font-size:13px;color:#64748b}
-  .export-btn{background:#2d3748;color:#fff;border-radius:8px;padding:8px 10px;border:0}
-  .plan-row{display:flex;gap:6px;margin-bottom:8px}
+  .export-btn{background:#2d3748;color:#fff;border-radius:8px;padding:8px 10px;border:0;cursor:pointer}
+  .plan-row{display:flex;gap:6px;margin-bottom:8px;align-items:center}
   .plan-input{flex:1;padding:6px;border-radius:6px;border:1px solid #dce3ea}
   .score-input{width:60px;padding:6px;border-radius:6px;border:1px solid #dce3ea;text-align:center}
-  .finish-btn{background:#38a169;color:#fff;border:0;border-radius:6px;padding:6px 10px}
+  .finish-btn{background:#38a169;color:#fff;border:0;border-radius:6px;padding:6px 10px;cursor:pointer}
   .type-select{padding:6px;border-radius:6px;border:1px solid #dce3ea}
 </style>
 </head>
@@ -92,15 +91,14 @@
   <div id="pagePlan" class="page">
     <div class="card">
       <div style="font-size:18px;font-weight:700;margin-bottom:8px">计划列表</div>
-
       <div id="planContainer"></div>
-
       <button id="addPlanBtn" class="btn small" style="margin-top:10px">
         添加计划
       </button>
     </div>
   </div>
 </div>
+
 <!-- 选择值 + 理由 弹窗 -->
 <div id="modal" class="modal" style="display:none">
   <div class="box">
@@ -133,7 +131,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const dbRef = ref(db, "state_manager_v3");
+
+/* ✅ 使用 v1 节点，恢复你原来的历史记录 */
+const dbRef = ref(db, "state_manager_v1");
 
 /* ---------------- 颜色方案（A） ---------------- */
 const typeColor = {
@@ -150,6 +150,33 @@ let logs = [];
 let highest = 0;
 let plans = [];
 
+/* ---------------- 数据规范化（兼容旧数据） ---------------- */
+function normalizeData() {
+  // 确保 values
+  stats.forEach(s => {
+    if (typeof values[s] !== "number") values[s] = 0;
+  });
+
+  // 确保 logs 是数组
+  if (!Array.isArray(logs)) logs = [];
+
+  // 确保 plans 是数组，并且每一项都有 text / type / score
+  if (!Array.isArray(plans)) {
+    plans = [];
+  } else {
+    plans = plans.map(p => {
+      if (typeof p === "string") {
+        return { text: p, type: "主线", score: 1 };
+      }
+      return {
+        text: (p.text || ""),
+        type: typeColor[p.type] ? p.type : "主线",
+        score: typeof p.score === "number" ? p.score : 1
+      };
+    });
+  }
+}
+
 /* ---------------- Firebase 监听（实时同步） ---------------- */
 onValue(dbRef, snapshot => {
   const data = snapshot.val();
@@ -164,6 +191,8 @@ onValue(dbRef, snapshot => {
     plans = [];
     highest = 0;
   }
+
+  normalizeData();
   renderStats();
   renderHistory();
   renderPlanList();
@@ -360,7 +389,10 @@ function renderPlanList() {
   plans.forEach((p, idx) => {
     const row = document.createElement("div");
     row.className = "plan-row";
-    row.style.color = typeColor[p.type];
+
+    // 按类别设定颜色（如果没有就用主线）
+    const currentType = p.type || "主线";
+    row.style.color = typeColor[currentType];
 
     /* 类别下拉 */
     const sel = document.createElement("select");
@@ -369,7 +401,7 @@ function renderPlanList() {
       const op = document.createElement("option");
       op.value = t;
       op.textContent = t;
-      if (t === p.type) op.selected = true;
+      if (t === currentType) op.selected = true;
       sel.appendChild(op);
     });
     sel.onchange = () => {
@@ -378,11 +410,19 @@ function renderPlanList() {
       saveAll();
     };
 
-    /* 输入框 */
+    /* 输入框（拼音输入修复：composition 处理） */
     const inp = document.createElement("input");
     inp.className = "plan-input";
     inp.value = p.text;
+    let isComposing = false;
+    inp.addEventListener("compositionstart", () => { isComposing = true; });
+    inp.addEventListener("compositionend", () => {
+      isComposing = false;
+      plans[idx].text = inp.value;
+      saveAll();
+    });
     inp.oninput = () => {
+      if (isComposing) return;   // 拼音还在组合，不保存、不重绘
       plans[idx].text = inp.value;
       saveAll();
     };
@@ -397,7 +437,7 @@ function renderPlanList() {
     scoreInp.oninput = () => {
       let v = Number(scoreInp.value);
       if (v > 10) v = 10;
-      if (v < 0) v = 0;
+      if (v < 0 || isNaN(v)) v = 0;
       plans[idx].score = v;
       scoreInp.value = v;
       saveAll();
@@ -423,7 +463,7 @@ function completePlan(idx) {
   const p = plans[idx];
   if (!p.text.trim()) return;
 
-  const stat = p.type;
+  const stat = p.type || "主线";
   const addValue = Number(p.score) || 0;
 
   values[stat] += addValue;
@@ -475,7 +515,6 @@ document.getElementById("exportBtn").onclick = () => {
   a.click();
   URL.revokeObjectURL(url);
 };
-
 </script>
 </body>
 </html>
